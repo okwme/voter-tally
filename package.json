@@ -1,0 +1,23 @@
+{
+  "name": "voter-tally",
+  "version": "1.0.0",
+  "description": "Create an airdrop using governance participation data",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/okwme/voter-tally.git"
+  },
+  "author": "billy rennekamp",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/okwme/voter-tally/issues"
+  },
+  "homepage": "https://github.com/okwme/voter-tally#readme",
+  "dependencies": {
+    "@cosmjs/encoding": "^0.26.5",
+    "axios": "^0.24.0"
+  }
+}
