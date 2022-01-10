@@ -30,8 +30,8 @@ async function start() {
     // console.log({valoper})
     // return
     // get list of all proposals to query
-    // const proposals = await getProposals()
-    const proposals = [49, 48]
+    const proposals = await getProposals()
+    // const proposals = [49, 48]
     // console.log({proposals})
 
     // for each proposal
@@ -118,7 +118,7 @@ async function workerBalances() {
     let workers = new Set()
     let threads = 7
     voters = Object.keys(allAccounts)
-    voters = voters.slice(0, 10)
+    // voters = voters.slice(0, 10)
     console.log(`total of ${voters.length} voters`)
     for (let i = 0; i < threads; i++) {
       let workerID = i;
@@ -198,7 +198,7 @@ async function workerBalances() {
 }
 
 function getBalancesOfDelegators(validator) {
-  return
+  // return
   console.log(`\ngetBalancesofDelegators(${validator})\n`)
   let rawdata = fs.readFileSync('6746995.json');
   let genesis = JSON.parse(rawdata);
