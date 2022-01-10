@@ -1,4 +1,4 @@
-
+'use strict'
 const axios = require('axios').default;
 const {Bech32} = require('@cosmjs/encoding')
 const fs = require('fs');
@@ -76,16 +76,16 @@ async function start() {
   await workerBalances()
   console.log('workerBalances done!')
 
-  console.log({allBalances})
+  // console.log({allBalances})
   // console.log({combinedvotes: votes.length})
   // console.log(votes[0])
 
-  let data = JSON.stringify(allAccounts, null, 2);
-  fs.writeFileSync('all-accounts.json', data);
+  // let data = JSON.stringify(allAccounts);
+  // fs.writeFileSync('all-accounts.json', data);
   // votes = [...new Set(votes)]
 
   // console.log({deduplicated: votes.length})
-  data = JSON.stringify(allBalances, null, 2);
+  let data = JSON.stringify(allBalances);
   fs.writeFileSync('all-balances.json', data);
 
   // go through each allvotes and get their balance at same block height
@@ -114,85 +114,69 @@ async function start() {
 
 async function workerBalances() {
   return new Promise((resolve, reject) => {
-    let offset = -1
     let workers = new Set()
-    let threads = 32
+    let threads = 7
     voters = Object.keys(allAccounts)
-    // voters = voters.slice(0, 10)
+    voters = voters.slice(0, 10)
     console.log(`total of ${voters.length} voters`)
     for (let i = 0; i < threads; i++) {
       let workerID = i;
-      console.log(workerID, `offset was ${offset}`)
-      offset++
-      console.log(workerID, `offset is now ${offset}`)
-      console.log(workerID, 'offset incremented 3')
-
       let worker = new Worker("./getBalances.js")
       workers.add(worker)
-      let address = voters[offset]
-
+      let address = voters.pop()
+      console.log(`number of voters after pop is ${voters.length}`)
       if (allAccounts[address]) {
         getBalancesOfDelegators(address)
       }
 
+      worker.postMessage({address})
 
-      worker.postMessage({offset,address})
       worker.on("message", user => {
-        console.log(workerID, {user})
+        console.log(`worker ${workerID} finished and there and ${voters.length} voters are left`)
         allBalances[user.address] = user.balance
-        total = Object.keys(allBalances).length
-        console.log(workerID, {offset})
-        console.log(workerID, `there are now ${total} out of ${voters.length} voters recorded`)
+        let total = Object.keys(allBalances).length
+        console.log(workerID, `there are now ${total} voters recorded (all together there are ${total + voters.length})`)
 
-        offset++
-        console.log(workerID, 'offset incremented 1')
-        if (offset < voters.length) {
-          console.log(workerID, `offset (${offset}) is < ${voters.length}`)
+        if (voters.length > 0) {
           let unique = false
           while(!unique) {
-            console.log(workerID, 1, {unique})
-            if (offset >= voters.length) {
-              console.log(workerID, `offset >= voters.length`)
+            if (voters.length == 0) {
+              console.log(workerID, `voters.length == 0 (1)`)
               worker.postMessage('exit')
-              console.log(workerID, 'going to break')
               break
             }
-            address = voters[offset]
-            console.log(workerID, `allBalances is ${typeof allBalances}`)
+            address = voters.pop()
+            console.log(`number of voters after pop is ${voters.length}`)
+
+            // balance of this address has not been recorded
             if (!allBalances.hasOwnProperty(address)) {
-              // console.log(workerID, `${address} is not included in `, {allBalances})
               unique = true
-            } else {
-              offset++
-              console.log(workerID, 'offset incremented 2')
             }
-            console.log(workerID, 2, {unique})
           }
           if (unique) {
-            console.log(workerID, 'still unique')
             if (allAccounts[address]) {
               getBalancesOfDelegators(address)
             }
-            worker.postMessage({offset, address})
+            worker.postMessage({address})
           }
         } else {
-          console.log(workerID, `offset = ${offset}, voters.length = ${voters.length}`)
+          console.log(workerID, `voters.length == 0 (2)`)
           worker.postMessage('exit')
         }
       })
       worker.on("error", code => {
         workers.delete(worker)
+        console.log(`After deletion, there are ${workers.size} workers (1)`)
         reject(new Error(`Worker error with error code ${code}`))
       })
       worker.on('exit', code =>{
         console.log(`Worker stopped with exit code ${code}`)
         workers.delete(worker)
-        console.log(`After deletion, there are ${workers.size} workers`)
+        console.log(`After deletion, there are ${workers.size} workers (2)`)
         if (workers.size == 0) {
           resolve()
         }
       })
-
     }
   })
 }
@@ -206,9 +190,6 @@ function getBalancesOfDelegators(validator) {
   const delegations = genesis.app_state.staking.delegations.filter(d => d.validator_address == valoper)
   console.log(`${delegations.length} new voters added`)
   voters = voters.concat(delegations.map(d => d.delegator_address))
-  // for (let i = 0; i < delegations.length; i++) {
-  //   getBalance(delegations[i].delegator_address)
-  // }
 }
 
 

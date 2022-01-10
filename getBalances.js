@@ -1,3 +1,4 @@
+'use strict'
 const { workerData, parentPort, isMainThread } = require("worker_threads");
 const fs = require('fs');
 
@@ -7,7 +8,6 @@ parentPort.on("message", message => {
       parentPort.close();
     } else {
       let address = message.address
-      let offset = message.offset
 
       let balance = getBalance(address)
       parentPort.postMessage({address, balance});
