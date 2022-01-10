@@ -115,9 +115,9 @@ async function start() {
 async function workerBalances() {
   return new Promise((resolve, reject) => {
     let workers = new Set()
-    let threads = 7
+    let threads = 32
     voters = Object.keys(allAccounts)
-    voters = voters.slice(0, 10)
+    // voters = voters.slice(0, 10)
     console.log(`total of ${voters.length} voters`)
     for (let i = 0; i < threads; i++) {
       let workerID = i;
