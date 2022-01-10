@@ -1,12 +1,17 @@
 const { workerData, parentPort, isMainThread } = require("worker_threads");
 const fs = require('fs');
 
-parentPort.on("message", address => {
-    if (address == "exit") {
+parentPort.on("message", message => {
+    console.log({message})
+    if (message == "exit") {
       parentPort.close();
+    } else {
+      let address = message.address
+      let offset = message.offset
+
+      let balance = getBalance(address)
+      parentPort.postMessage({address, balance});
     }
-    let balance = getBalance(address)
-    parentPort.postMessage({address,balance});
 });
 
 
@@ -29,11 +34,12 @@ function getBalance(address) {
   let balances = genesis.app_state.bank.balances.filter(a => a.address == address)
   if (balances.length == 0) {
     new Error(`balances of account ${address} are empty`)
+    return 0
   }
   if (balances[0].hasOwnProperty('coins')){
     let uatoms = balances[0].coins.filter(a => a.denom == 'uatom')
     if (uatoms.length > 0) {
-      balance += parseInt(uatoms[0])
+      balance += parseInt(uatoms[0].amount)
     }
   }
   let allTotalShares = {}
@@ -57,6 +63,7 @@ function getBalance(address) {
     let shareBalance = (parseFloat(shares) / parseFloat(totalShares)) * tokens
     balance += parseInt(shareBalance)
   }
+
   // allBalances[address] = balance
   // console.log(`allBalances = ${Object.keys(allBalances).length}`)
   return balance

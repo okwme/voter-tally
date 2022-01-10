@@ -30,8 +30,8 @@ async function start() {
     // console.log({valoper})
     // return
     // get list of all proposals to query
-    const proposals = await getProposals()
-    // const proposals = [49, 48]
+    // const proposals = await getProposals()
+    const proposals = [49, 48]
     // console.log({proposals})
 
     // for each proposal
@@ -74,6 +74,9 @@ async function start() {
   // at this point it returns the original voter as just an address, plus all the delegators for each validator
   // await getDelegators()
   await workerBalances()
+  console.log('workerBalances done!')
+
+  console.log({allBalances})
   // console.log({combinedvotes: votes.length})
   // console.log(votes[0])
 
@@ -111,12 +114,19 @@ async function start() {
 
 async function workerBalances() {
   return new Promise((resolve, reject) => {
-    let offset = 0
+    let offset = -1
     let workers = new Set()
     let threads = 7
     voters = Object.keys(allAccounts)
-    voters = voters.slice(0, 100)
+    voters = voters.slice(0, 10)
+    console.log(`total of ${voters.length} voters`)
     for (let i = 0; i < threads; i++) {
+      let workerID = i;
+      console.log(workerID, `offset was ${offset}`)
+      offset++
+      console.log(workerID, `offset is now ${offset}`)
+      console.log(workerID, 'offset incremented 3')
+
       let worker = new Worker("./getBalances.js")
       workers.add(worker)
       let address = voters[offset]
@@ -126,50 +136,63 @@ async function workerBalances() {
       }
 
 
-      worker.postMessage(address)
+      worker.postMessage({offset,address})
       worker.on("message", user => {
+        console.log(workerID, {user})
         allBalances[user.address] = user.balance
         total = Object.keys(allBalances).length
-        console.log(`there are now ${total} out of ${voters.length} voters recorded`)
-        if (offset < voters.length) {
-          offset++
-          let unique = false
+        console.log(workerID, {offset})
+        console.log(workerID, `there are now ${total} out of ${voters.length} voters recorded`)
 
+        offset++
+        console.log(workerID, 'offset incremented 1')
+        if (offset < voters.length) {
+          console.log(workerID, `offset (${offset}) is < ${voters.length}`)
+          let unique = false
           while(!unique) {
+            console.log(workerID, 1, {unique})
+            if (offset >= voters.length) {
+              console.log(workerID, `offset >= voters.length`)
+              worker.postMessage('exit')
+              console.log(workerID, 'going to break')
+              break
+            }
             address = voters[offset]
+            console.log(workerID, `allBalances is ${typeof allBalances}`)
             if (!allBalances.hasOwnProperty(address)) {
+              console.log(workerID, `${address} is not included in `, {allBalances})
               unique = true
             } else {
               offset++
+              console.log(workerID, 'offset incremented 2')
             }
-            if (offset >= voters.length) {
-              worker.postMessage('exit')
-              break
-            }
+            console.log(workerID, 2, {unique})
           }
           if (unique) {
+            console.log(workerID, 'still unique')
             if (allAccounts[address]) {
               getBalancesOfDelegators(address)
             }
-            worker.postMessage(address)
+            worker.postMessage({offset, address})
           }
         } else {
-          console.log(`offset = ${offset}, voters.length = ${voters.length}`)
+          console.log(workerID, `offset = ${offset}, voters.length = ${voters.length}`)
           worker.postMessage('exit')
         }
       })
       worker.on("error", code => {
         workers.delete(worker)
-        reject(new Error(`Worker error with exit code ${code}`))
+        reject(new Error(`Worker error with error code ${code}`))
       })
       worker.on('exit', code =>{
         console.log(`Worker stopped with exit code ${code}`)
         workers.delete(worker)
+        console.log(`After deletion, there are ${workers.size} workers`)
         if (workers.size == 0) {
           resolve()
         }
       })
-      offset++
+
     }
   })
 }
@@ -208,20 +231,20 @@ async function getVoters(proposals) {
   console.log('getVoters')
   let votes = []
   for (let i = 0; i < proposals.length; i++) {
-    votes = votes.concat(await getVotes(proposals[i]))
+    await getVotes(proposals[i])
   }
-  const result = [];
-  const map = new Map();
-  for (const item of votes) {
-      if(!map.has(item.voter)){
-          map.set(item.voter, true);    // set any value to Map
-          result.push({
-              voter: item.voter,
-              is_validator: item.is_validator
-          })
-      }
-  }
-  return result 
+  // const result = [];
+  // const map = new Map();
+  // for (const item of votes) {
+  //     if(!map.has(item.voter)){
+  //         map.set(item.voter, true);    // set any value to Map
+  //         result.push({
+  //             voter: item.voter,
+  //             is_validator: item.is_validator
+  //         })
+  //     }
+  // }
+  // return result 
 }
 
 async function getVotes(proposal_id, offset = 0, votes = []) {
@@ -247,12 +270,12 @@ async function getVotes(proposal_id, offset = 0, votes = []) {
     allAccounts[voter.voter] = voter.is_validator
   }
 
-  votes = votes.concat(chunk.data)
-  if (chunk.data.length < limit) {
-    return votes
-  } else {
-    return getProposals(proposal_id, offset + limit, votes)
-  }
+  // votes = votes.concat(chunk.data)
+  // if (chunk.data.length < limit) {
+  //   return votes
+  // } else {
+  //   return getProposals(proposal_id, offset + limit, votes)
+  // }
 }
 
 async function getProposals() {
