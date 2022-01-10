@@ -116,7 +116,7 @@ async function workerBalances() {
   return new Promise((resolve, reject) => {
     let offset = -1
     let workers = new Set()
-    let threads = 7
+    let threads = 32
     voters = Object.keys(allAccounts)
     // voters = voters.slice(0, 10)
     console.log(`total of ${voters.length} voters`)
@@ -160,7 +160,7 @@ async function workerBalances() {
             address = voters[offset]
             console.log(workerID, `allBalances is ${typeof allBalances}`)
             if (!allBalances.hasOwnProperty(address)) {
-              console.log(workerID, `${address} is not included in `, {allBalances})
+              // console.log(workerID, `${address} is not included in `, {allBalances})
               unique = true
             } else {
               offset++
