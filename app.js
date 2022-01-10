@@ -186,7 +186,7 @@ function getBalancesOfDelegators(validator) {
   let alreadyrecorded = false
   for (let i =0; i< allValidators.length && !alreadyrecorded; i++) {
     let val = allValidators[i]
-    if (val == valdator) {
+    if (val == validator) {
       alreadyrecorded = true
     }
   }
