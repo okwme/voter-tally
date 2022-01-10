@@ -11,6 +11,7 @@ axios.defaults.baseURL = baseURL
 let voters = []
 let allAccounts = {}
 let allBalances = {}
+let allValidators = []
 let allTotalShares = {}
 // const proposals = [
 //   23, // 
@@ -23,7 +24,7 @@ async function start() {
 
   // console.log(process.argv)
   const skip = process.argv.length > 2 && process.argv[2]
-  let votes
+
   if (!skip) {
     // const val = 'cosmos102ruvpv2srmunfffxavttxnhezln6fnc3pf7tt'
     // const valoper = Bech32.encode('cosmosvaloper', Bech32.decode(val, 'cosmos').data)
@@ -117,7 +118,7 @@ async function workerBalances() {
     let workers = new Set()
     let threads = 32
     voters = Object.keys(allAccounts)
-    // voters = voters.slice(0, 10)
+    // voters = voters.slice(0, 1000)
     console.log(`total of ${voters.length} voters`)
     for (let i = 0; i < threads; i++) {
       let workerID = i;
@@ -182,6 +183,15 @@ async function workerBalances() {
 }
 
 function getBalancesOfDelegators(validator) {
+  let alreadyrecorded = false
+  for (let i =0; i< allValidators.length && !alreadyrecorded; i++) {
+    let val = allValidators[i]
+    if (val == valdator) {
+      alreadyrecorded = true
+    }
+  }
+  if (alreadyrecorded) return
+  allValidators.push(validator)
   // return
   console.log(`\ngetBalancesofDelegators(${validator})\n`)
   let rawdata = fs.readFileSync('6746995.json');
