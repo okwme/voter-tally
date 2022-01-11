@@ -3,8 +3,8 @@ const { workerData, parentPort, isMainThread } = require("worker_threads");
 const fs = require('fs');
 
 parentPort.on("message", message => {
-    console.log({message})
     if (message == "exit") {
+      console.log(`exit worker`)
       parentPort.close();
     } else {
       let address = message.address

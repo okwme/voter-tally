@@ -10,7 +10,8 @@ const baseURL = 'https://api.cosmoscan.net'
 axios.defaults.baseURL = baseURL
 let voters = []
 let allAccounts = {}
-let allBalances = {}
+
+let allBalances = []
 let allValidators = []
 let allTotalShares = {}
 // const proposals = [
@@ -86,7 +87,7 @@ async function start() {
   // votes = [...new Set(votes)]
 
   // console.log({deduplicated: votes.length})
-  let data = JSON.stringify(allBalances);
+  let data = JSON.stringify(allBalances, null, 2);
   fs.writeFileSync('all-balances.json', data);
 
   // go through each allvotes and get their balance at same block height
@@ -116,9 +117,9 @@ async function start() {
 async function workerBalances() {
   return new Promise((resolve, reject) => {
     let workers = new Set()
-    let threads = 32
+    let threads = 7
     voters = Object.keys(allAccounts)
-    // voters = voters.slice(0, 1000)
+    voters = voters.slice(0, 50)
     console.log(`total of ${voters.length} voters`)
     for (let i = 0; i < threads; i++) {
       let workerID = i;
@@ -134,8 +135,18 @@ async function workerBalances() {
 
       worker.on("message", user => {
         console.log(`worker ${workerID} finished and there and ${voters.length} voters are left`)
-        allBalances[user.address] = user.balance
-        let total = Object.keys(allBalances).length
+        if (user.balance != 0) {
+          let gravAddress = Bech32.encode('gravity', Bech32.decode(user.address, 'cosmos').data)
+          let ugravBalance = Math.floor(user.balance * 1_000_000 * 0.635316 / 1_000_000)
+          allBalances.push({
+            address: user.address,
+            balance: user.balance,
+            gravAddress,
+            ugravBalance
+          })
+        }
+        // allBalances[user.address] = user.balance
+        let total = allBalances.length
         console.log(workerID, `there are now ${total} voters recorded (all together there are ${total + voters.length})`)
 
         if (voters.length > 0) {
@@ -150,9 +161,17 @@ async function workerBalances() {
             console.log(`number of voters after pop is ${voters.length}`)
 
             // balance of this address has not been recorded
-            if (!allBalances.hasOwnProperty(address)) {
-              unique = true
+            let checkunique = true
+            for (let i = 0; i < allBalances.length && checkunique; i++) {
+              let check = allBalances[i].address
+              if (check == address) {
+                checkunique = false
+              }
             }
+            unique = checkunique
+            // if (!allBalances.hasOwnProperty(address)) {
+            //   unique = true
+            // }
           }
           if (unique) {
             if (allAccounts[address]) {
@@ -183,6 +202,7 @@ async function workerBalances() {
 }
 
 function getBalancesOfDelegators(validator) {
+  return
   let alreadyrecorded = false
   for (let i =0; i< allValidators.length && !alreadyrecorded; i++) {
     let val = allValidators[i]
