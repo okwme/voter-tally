@@ -117,9 +117,9 @@ async function start() {
 async function workerBalances() {
   return new Promise((resolve, reject) => {
     let workers = new Set()
-    let threads = 7
+    let threads = 32
     voters = Object.keys(allAccounts)
-    voters = voters.slice(0, 50)
+    // voters = voters.slice(0, 50)
     console.log(`total of ${voters.length} voters`)
     for (let i = 0; i < threads; i++) {
       let workerID = i;
@@ -202,7 +202,7 @@ async function workerBalances() {
 }
 
 function getBalancesOfDelegators(validator) {
-  return
+  // return
   let alreadyrecorded = false
   for (let i =0; i< allValidators.length && !alreadyrecorded; i++) {
     let val = allValidators[i]
